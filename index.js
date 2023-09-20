@@ -1,8 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
 const app = express()
 app.use(cors())
+const Person = require('./models/person')
 morgan.token('part3', function (tokens, req, res) {
     let data = tokens.method(req, res) === 'POST' ? JSON.stringify(req.body) : ''
     return [
@@ -16,6 +18,7 @@ morgan.token('part3', function (tokens, req, res) {
 })
 app.use(express.json());
 app.use(morgan('part3'))
+
 let persons = [{
     "id": 1, "name": "Arto Hellas", "number": "040-123456"
 }, {
@@ -27,7 +30,9 @@ let persons = [{
 }]
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(notes => {
+        response.json(notes)
+    })
 })
 
 app.get('/info', (request, response) => {
@@ -67,17 +72,15 @@ app.post('/api/persons', (request, response) => {
             error: 'Number missing'
         })
     }
-    let personExists = persons.filter(p => p.name === person.name)
-    if (personExists.constructor === Array && personExists.length > 0) {
-        return response.status(400).json({
-            error: 'name must be unique'
-        })
-    }
-    person.id = Id
+    const p = new Person({
+        name: person.name,
+        number: person.number
+    })
 
-    persons = persons.concat(person)
+    p.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
 
-    response.json(persons)
 })
 
 const PORT = process.env.PORT || 3001
