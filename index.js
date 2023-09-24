@@ -30,14 +30,17 @@ let persons = [{
 }]
 
 app.get('/api/persons', (request, response) => {
-    Person.find({}).then(notes => {
-        response.json(notes)
+    Person.find({}).then(persons => {
+        response.json(persons)
     })
 })
 
 app.get('/info', (request, response) => {
     let date = new Date()
-    response.send(`Phonebook has info for ${persons.length} people<br>${date}`)
+    Person.find({}).then(persons => {
+        response.send(`Phonebook has info for ${persons.length} people<br>${date}`)
+    })
+
 })
 
 app.get('/api/persons/:id', (request, response) => {
@@ -51,7 +54,7 @@ app.get('/api/persons/:id', (request, response) => {
         })
         .catch(error => {
             console.log(error)
-            response.status(400).send({ error: 'malformatted id' })
+            response.status(400).send({error: 'malformatted id'})
         })
 })
 
@@ -64,8 +67,9 @@ app.delete('/api/persons/:id', (request, response, next) => {
 })
 
 app.post('/api/persons', (request, response) => {
-    const Id = parseInt(Math.random() * 9999999)
 
+
+    const Id = parseInt(Math.random() * 9999999)
     const person = request.body
     if (!person.name) {
         return response.status(400).json({
@@ -77,13 +81,30 @@ app.post('/api/persons', (request, response) => {
             error: 'Number missing'
         })
     }
-    const p = new Person({
-        name: person.name,
-        number: person.number
-    })
+    Person.find({}).then(persons => {
+        const allPersons = persons
+        const existsPerson = allPersons.filter(per => {
+            return per.name === person.name
+        })
+        if (existsPerson.length > 0) {
+            Person.findOneAndUpdate(
+                {"name": person.name},
+                {"number": person.number}
+            ).then(result => {
+                console.log('Person updated!')
+                response.status(200).end()
+            }).catch(error => next(error))
+        } else {
+            const p = new Person({
+                "name": person.name,
+                "number": person.number
+            })
 
-    p.save().then(savedPerson => {
-        response.json(savedPerson)
+            p.save().then(result => {
+                console.log('Person saved!')
+            })
+        }
+        response.json(persons)
     })
 
 })
