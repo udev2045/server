@@ -19,15 +19,6 @@ morgan.token('part3', function (tokens, req, res) {
 app.use(express.json());
 app.use(morgan('part3'))
 
-let persons = [{
-    "id": 1, "name": "Arto Hellas", "number": "040-123456"
-}, {
-    "id": 2, "name": "Ada Lovelace", "number": "39-44-5323523"
-}, {
-    "id": 3, "name": "Dan Abramov", "number": "12-43-234345"
-}, {
-    "id": 4, "name": "Mary Poppendieck", "number": "39-23-6423122"
-}]
 
 app.get('/api/persons', (request, response) => {
     Person.find({}).then(persons => {
@@ -68,9 +59,10 @@ app.delete('/api/persons/:id', (request, response, next) => {
 
 app.post('/api/persons', (request, response) => {
 
-
-    const Id = parseInt(Math.random() * 9999999)
     const person = request.body
+    if (person.name === undefined) {
+        return response.status(400).json({ error: 'Name missing' })
+    }
     if (!person.name) {
         return response.status(400).json({
             error: 'Name missing'
@@ -103,6 +95,7 @@ app.post('/api/persons', (request, response) => {
             p.save().then(result => {
                 console.log('Person saved!')
             })
+
         }
         response.json(persons)
     })
